@@ -1,17 +1,22 @@
 #Script to do the spatial analysis
-#Need to download Well from DB (for now and put into Sp_analysis)
+#Download Well and CASWI from DB to put into Sp_analysis
 
 library(dplyr)
 library(rgeos)
 library(readr)
+library(RSQLite)
 
+#set wd
+setwd("C:/Users/jglasskatz/Desktop")
 
+#initialize the db
+con = dbConnect(drv=SQLite(), dbname="DBWorkbook.sqlite")
 #Load CASGEM data
-casWI <- read.csv('C:/Users/jglasskatz/Desktop/Sp_analysis/casgemWI.csv')
+casWI <- dbGetQuery( con,'select * from CASGEMWI' )
 cassp <- SpatialPoints(casWI[,4:5])
 
 #Load Well data
-well <- read_csv("C:/Users/jglasskatz/Desktop/Sp_analysis/well.csv")
+well <- dbGetQuery( con,'select * from Well' )
 #need to clear out NA's for the data to be processed as a spatial frame
 #use weLat because the ones with StateID's have already been matched in SQL
 welat <- filter(well, !is.na(Lat) & StateID =='')
