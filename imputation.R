@@ -225,7 +225,8 @@ pdata5[is.na(pdata5$Electricity_kWh) |pdata5$Electricity_kWh<0,]$Electricity_kWh
 con2 <- file("/Users/jglasskatz/Desktop/Pumpclean.csv",encoding="UTF-8")  
 write.csv(pdata5, file =con2, row.names = FALSE) 
 
-
+#write to SQL
+dbWriteTable(con,Pumpingclean, pdata5)
 
 
 
