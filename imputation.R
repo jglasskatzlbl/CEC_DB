@@ -3,10 +3,18 @@
 library(dplyr)
 library(randomForest)
 library(readr)
+library(RSQLite)
 
-#read in the raw data (download first for now) from PumpCAS
+#set wd
+setwd("C:/Users/jglasskatz/Desktop")
 
-pdata3 <- read_csv('/Users/jglasskatz/Desktop/pumpcas.csv')
+#initialize the db
+con = dbConnect(drv=SQLite(), dbname="DBWorkbook.sqlite")
+
+
+#read in the raw data from PumpCAS
+
+pdata3 <- dbGetQuery( con,'select * from Pumpcas' )
 #Try to interpolate between the missing seasonal depths
 #This works when all twelve months are present and on 4 and 9
 pdata3$Month <- as.numeric(substr(pdata$Year_Month,6,7))
