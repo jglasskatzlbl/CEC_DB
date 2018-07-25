@@ -228,8 +228,8 @@ write.csv(pdata5, file =con2, row.names = FALSE)
 #write to SQL
 dbWriteTable(con,Pumpingclean, pdata5)
 
-
-
+#Disconnect
+dbDisconnect()
 
 
 
