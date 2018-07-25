@@ -38,3 +38,5 @@ wecasj <- left_join(welat1,casWI,by = 'CASGEMID')
 wecasj <- wecasj[,-c(12,13)]
 wecasj <- wecasj[,c(1:11,13,12,14:16)]
 write.csv(wecasj, file = '/Users/jglasskatz/Desktop/Sp_analysis/wecaslat.csv', row.names = FALSE)
+
+dbDisconnect()
