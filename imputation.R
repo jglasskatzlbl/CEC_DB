@@ -17,7 +17,7 @@ con = dbConnect(drv=SQLite(), dbname="DBWorkbook.sqlite")
 pdata3 <- dbGetQuery( con,'select * from Pumpcas' )
 #Try to interpolate between the missing seasonal depths
 #This works when all twelve months are present and on 4 and 9
-pdata3$Month <- as.numeric(substr(pdata$Year_Month,6,7))
+pdata3$Month <- as.numeric(substr(pdata3$Year_Month,6,7))
 #remove duplicate rows
 pdata3 <- pdata3[!duplicated(pdata3[1:2]),]
 
