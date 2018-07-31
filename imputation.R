@@ -178,15 +178,15 @@ for(i in 1:10){
   sampS[i] =(samp<.1*i & samp >.1*(i-1))
 }
 
-#impute
-rfEnergy <- rfImpute(Volume_ac_ft~  Electricity_kWh 
+#impute. Must first load script rfImputeRestricted
+rfEnergy <- rfImputeRestricted(Volume_ac_ft~  Electricity_kWh 
                      + Depth_ft + factor(Month) + factor(Agency), 
                      data = rf, iter=5, ntree=300, 
                      subset = sampS[,1])
 
 #impute the rest of the data set using a loop 
 for(i in 2:10){
-  rfEnergy1 <- rfImpute(Volume_ac_ft~  Electricity_kWh + 
+  rfEnergy1 <- rfImputeRestricted(Volume_ac_ft~  Electricity_kWh + 
                         Depth_ft + factor(Month) + factor(Agency), 
                         data = rf, iter=5, ntree=300, subset = sampS[,i])
   rfEnergy =rbind(rfEnergy,rfEnergy1) 
