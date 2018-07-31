@@ -59,7 +59,7 @@ for agent in agents:
     size = len(set(pump.loc[pump.loc[:,'Agency'] == agent,"Well_Id"]))
 
     if((agent in agedic) & (size >0)):
-        divs = agedic[agent][-1]/size
+        divs = agedic[agent][-1]/size/12
         newline = [i * divs for i in agedic[agent][0:-1]]
         for date in range(2006, 2016):
             pump1.loc[((pump1.loc[:,'Agency'] == agent) & (pump1.loc[:,'Year_Month'].str.contains(str(date)))), 'Volume_ac_ft'] = newline[date-2006]
