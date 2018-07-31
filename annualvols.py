@@ -56,7 +56,7 @@ pump1 = pump[pump.loc[:,'Volume_ac_ft'].isnull()]
 #These can be used as a map to give volume to those missing.
 for agent in agents:
     df = pump1[pump1.loc[:,'Agency'] == agent]
-    size = len(pump[pump.loc[:,'Agency'] == agent])
+    size = len(set(pump.loc[pump.loc[:,'Agency'] == agent,"Well_Id"]))
 
     if((agent in agedic) & (size >0)):
         divs = agedic[agent][-1]/size
