@@ -17,7 +17,7 @@ con = dbConnect(drv=SQLite(), dbname="DBWorkbook.sqlite")
 pdata3 <- dbGetQuery( con,'select * from Pumpcas' )
 #Try to interpolate between the missing seasonal depths
 #This works when all twelve months are present and on 4 and 9
-pdata3$Month <- as.numeric(substr(pdata$Year_Month,6,7))
+pdata3$Month <- as.numeric(substr(pdata3$Year_Month,6,7))
 #remove duplicate rows
 pdata3 <- pdata3[!duplicated(pdata3[1:2]),]
 
@@ -167,9 +167,14 @@ pdata3 <- do.call(data.frame,lapply(pdata3, function(x) replace(x, is.infinite(x
 pdata3$e <- 0
 pdata3[!is.na(pdata3$Electricity_kWh),]$e <- 1
 
+#write the file for partially imputed data
+con.pdata3 <- file("/Users/jglasskatz/Desktop/Imputed_no_RF.csv",encoding="UTF-8")  
+write.csv(pdata3, file =con.pdata3, row.names = FALSE)
+
+
 #Use a random forest to impute the missing electricity data
 
-rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) & ! Volume_ac_ft==0)
+rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) &  Volume_ac_ft>0 &Depth_ft>0)
 
 #break it down into usable chunks
 samp <- runif(nrow(rf))
@@ -178,7 +183,7 @@ for(i in 1:10){
   sampS[i] =(samp<.1*i & samp >.1*(i-1))
 }
 
-#impute. Must first load script rfImputeRestricted
+#impute
 rfEnergy <- rfImputeConstrained(Volume_ac_ft~  Electricity_kWh 
                      + Depth_ft + factor(Month) + factor(Agency), 
                      data = rf, iter=5, ntree=300, 
@@ -221,6 +226,8 @@ pdata5[is.na(pdata5$Depth_ft) |is.infinite(pdata5$Depth_ft),]$Depth_ft <- NA
 pdata5[is.na(pdata5$Volume_ac_ft) |pdata5$Volume_ac_ft<0,]$Volume_ac_ft <- NA
 pdata5[is.na(pdata5$Electricity_kWh) |pdata5$Electricity_kWh<0,]$Electricity_kWh <- NA
 
+#Make a column of implyied OPPE. Using depth as a substitute for Head
+pdata5$OPPEest <- 1.024 *pdata5$Volume_ac_ft *pdata5$Depth_ft/pdata5$Electricity_kWh
 #save
 con2 <- file("/Users/jglasskatz/Desktop/Pumpclean.csv",encoding="UTF-8")  
 write.csv(pdata5, file =con2, row.names = FALSE) 
@@ -228,8 +235,9 @@ write.csv(pdata5, file =con2, row.names = FALSE)
 #write to SQL
 dbWriteTable(con,Pumpingclean, pdata5)
 
-#Disconnect
-dbDisconnect()
+dbDisconnect(con)
+
+
 
 
 
