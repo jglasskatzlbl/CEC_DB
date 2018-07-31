@@ -165,11 +165,20 @@ pdata3 <- do.call(data.frame,lapply(pdata3, function(x) replace(x, is.infinite(x
 
 #track where there are values being imputed
 pdata3$e <- 0
+#Make negative electricity values NA
+pdata3[!is.na(pdata3$Electricity_kWh) &pdata3$Electricity_kWh<0, "Electricity_kWh"] <- NA
 pdata3[!is.na(pdata3$Electricity_kWh),]$e <- 1
+
+#write the file for partially imputed data
+con.pdata3 <- file("/Users/jglasskatz/Desktop/Imputed_no_RF.csv",encoding="UTF-8")  
+write.csv(pdata3, file =con.pdata3, row.names = FALSE)
+
 
 #Use a random forest to impute the missing electricity data
 
-rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) & ! Volume_ac_ft==0)
+rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) &  Volume_ac_ft>0 &Depth_ft>0 )
+#get rid of values that will cause problems
+rf <- filter(rf, Electricity_kWh !=0 | is.na(Electricity_kWh))
 
 #break it down into usable chunks
 samp <- runif(nrow(rf))
@@ -179,14 +188,14 @@ for(i in 1:10){
 }
 
 #impute
-rfEnergy <- rfImpute(Volume_ac_ft~  Electricity_kWh 
+rfEnergy <- rfImputeConstrained(Volume_ac_ft~  Electricity_kWh 
                      + Depth_ft + factor(Month) + factor(Agency), 
                      data = rf, iter=5, ntree=300, 
                      subset = sampS[,1])
 
 #impute the rest of the data set using a loop 
 for(i in 2:10){
-  rfEnergy1 <- rfImpute(Volume_ac_ft~  Electricity_kWh + 
+  rfEnergy1 <- rfImputeConstrained(Volume_ac_ft~  Electricity_kWh + 
                         Depth_ft + factor(Month) + factor(Agency), 
                         data = rf, iter=5, ntree=300, subset = sampS[,i])
   rfEnergy =rbind(rfEnergy,rfEnergy1) 
@@ -221,6 +230,8 @@ pdata5[is.na(pdata5$Depth_ft) |is.infinite(pdata5$Depth_ft),]$Depth_ft <- NA
 pdata5[is.na(pdata5$Volume_ac_ft) |pdata5$Volume_ac_ft<0,]$Volume_ac_ft <- NA
 pdata5[is.na(pdata5$Electricity_kWh) |pdata5$Electricity_kWh<0,]$Electricity_kWh <- NA
 
+#Make a column of implyied OPPE. Using depth as a substitute for Head
+pdata5$OPPEest <- 1.024 *pdata5$Volume_ac_ft *pdata5$Depth_ft/pdata5$Electricity_kWh
 #save
 con2 <- file("/Users/jglasskatz/Desktop/Pumpclean.csv",encoding="UTF-8")  
 write.csv(pdata5, file =con2, row.names = FALSE) 
@@ -228,9 +239,7 @@ write.csv(pdata5, file =con2, row.names = FALSE)
 #write to SQL
 dbWriteTable(con,Pumpingclean, pdata5)
 
-#Disconnect
-dbDisconnect()
-
+dbDisconnect(con)
 
 
                      
