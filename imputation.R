@@ -165,6 +165,8 @@ pdata3 <- do.call(data.frame,lapply(pdata3, function(x) replace(x, is.infinite(x
 
 #track where there are values being imputed
 pdata3$e <- 0
+#Make negative electricity values NA
+pdata3[!is.na(pdata3$Electricity_kWh) &pdata3$Electricity_kWh<0, "Electricity_kWh"] <- NA
 pdata3[!is.na(pdata3$Electricity_kWh),]$e <- 1
 
 #write the file for partially imputed data
@@ -174,7 +176,9 @@ write.csv(pdata3, file =con.pdata3, row.names = FALSE)
 
 #Use a random forest to impute the missing electricity data
 
-rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) &  Volume_ac_ft>0 &Depth_ft>0)
+rf <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) &  Volume_ac_ft>0 &Depth_ft>0 )
+#get rid of values that will cause problems
+rf <- filter(rf, Electricity_kWh !=0 | is.na(Electricity_kWh))
 
 #break it down into usable chunks
 samp <- runif(nrow(rf))
@@ -236,9 +240,6 @@ write.csv(pdata5, file =con2, row.names = FALSE)
 dbWriteTable(con,Pumpingclean, pdata5)
 
 dbDisconnect(con)
-
-
-
 
 
                      
