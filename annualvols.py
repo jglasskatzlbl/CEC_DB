@@ -62,21 +62,11 @@ for agent in agents:
         divs = agedic[agent][-1]/size
         newline = [i * divs for i in agedic[agent][0:-1]]
         for date in range(2006, 2016):
-            pump1.loc[((pump1['Agency'] == agent) & (pump1['Year_Month'].str.contains(str(date)))), 'Volume_ac_ft'] = newline[date-2006]
+            pump1.loc[((pump1.loc[:,'Agency'] == agent) & (pump1.loc[:,'Year_Month'].str.contains(str(date)))), 'Volume_ac_ft'] = newline[date-2006]
 
-#Weird because you get an error message but it ends up working
 
-#update the db
-#to_db = []
-#for i in pump1.index:
-#    vol = pump1.loc[i,'Volume_ac_ft']
-#    date = pump1.loc[i,'Year_Month']
-#    wellid = pump1.loc[i,'Well_Id']
-#    to_db.append((vol,wellid, date))
 
-#cur.executemany('''UPDATE Pumpcas SET Volume_ac_ft = ? WHERE Well_Id = ? AND Year_Month = ?;''',to_db)
-
-#try using row id instead bc really slow
+#try using row id 
 to_db1 = []
 for i in pump1.index:
     vol = pump1.loc[i,'Volume_ac_ft']
