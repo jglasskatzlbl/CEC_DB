@@ -1,0 +1,89 @@
+---
+title: "Random Forest Imputation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(randomForest)
+library(readr)
+library(ggplot2)
+```
+
+```{r}
+#RFImpute
+
+pdata3 <- read_csv("C:/Users/jglasskatz/Desktop/Imputed_No_RF.csv")
+pdata3$OPPE <- as.numeric(pdata3$OPPE)
+pdata3$Electricity_kWh <- as.numeric(pdata3$Electricity_kWh)
+pdata3$Depth_ft <- as.numeric(pdata3$Depth_ft)
+pdata3$Volume_ac_ft <- as.numeric(pdata3$Volume_ac_ft)
+
+rf1 <- filter(pdata3, !is.na(Volume_ac_ft) & !is.na(Depth_ft) & ! Volume_ac_ft==0)
+
+#It appears that %Var(y) seriously tanks when grouped by Well. This makes sense because OPE and Energy are concentrated for some wells
+pdata2 <- pdata03
+pdata2$en <- !is.na(pdata2$Electricity_kWh)
+pdata2$op <- !is.na(as.numeric(pdata2$OPPE))
+length(unique(filter(pdata2,op)$Well_Id))
+length(unique(filter(pdata2,en)$Well_Id))
+#OPE is much more concentrated then electricity, but they are both very concentrated. I think back track and don't use the grouped sample
+samp <- runif(nrow(rf1))
+sampS =data.frame(x=rep(0,nrow(rf1)))
+for(i in 1:10){
+  sampS[i] =(samp<.1*i & samp >.1*(i-1))
+}
+#Make the initial imputation
+rfOPE1 <- rfImpute(Volume_ac_ft~ OPPE + Electricity_kWh + Depth_ft + factor(Month) + factor(Agency), data = rf1, iter=5, ntree=250, subset = sampS[,1])
+#     |      Out-of-bag   |
+#Tree |      MSE  %Var(y) |
+# 300 | 8.477e+04    49.11 |
+#     |      Out-of-bag   |
+#Tree |      MSE  %Var(y) |
+# 300 | 1.033e+05    59.85 |
+#     |      Out-of-bag   |
+#Tree |      MSE  %Var(y) |
+# 300 | 8.512e+04    49.31 |
+#     |      Out-of-bag   |
+#Tree |      MSE  %Var(y) |
+# 300 | 8.611e+04    49.88 |
+#     |      Out-of-bag   |
+#Tree |      MSE  %Var(y) |
+# 300 | 9.26e+04    53.64 |
+
+rfOPE = rfOPE1
+#impute the rest of the data set using a loop 
+for(i in 2:10){
+  rfOPE2 <- rfImpute(Volume_ac_ft~ OPPE + Electricity_kWh + Depth_ft + factor(Month) + factor(Agency), data = rf1, iter=5, ntree=250, subset = sampS[,i])
+  rfOPE =rbind(rfOPE,rfOPE2) 
+}
+#Match the values 
+rfOPE$index <- as.numeric(row.names(rfOPE))
+rfOPE <- rfOPE[order(rfOPE$index),]
+#insert them into data set
+rf1$OPPE <- rfOPE$OPPE
+rf1$Electricity_kWh <- rfOPE$Electricity_kWh
+# Here is a good justification for this imputation. See the discussion section. Stresses the nonlinearities captured by random forest imputation as well as the lack of bias introduction. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3939843/
+
+con <- file("/Users/jglasskatz/Desktop/rf250.csv",encoding="UTF-8")
+write.csv(rf1, con, row.names = FALSE)
+
+```
+
+There needs to be a way to test the data we have derived. Because of the nature of imputation we cannot measure our success by the accuracy of the model on a test set. Imputation is by design random and does not attempt to fit a model. However we can construct a RF on the existing data and see how well it is able to predict on a test set we construct. This will not measure the accuracy of imputation, they are seperate models, but it will lend an idea of how accurate the imputation could be. 
+
+```{r}
+
+
+
+
+```
+
+
+
+
+
